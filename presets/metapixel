@@ -1,0 +1,31 @@
+[main]
+exec = "metapixel --metapixel"
+pre = "%infile% %outfile% -l ~/.metapixel"
+post = ""
+
+[param::collage]
+append = "--collage"
+optional = true
+
+[param::cheat]
+append = "--cheat="
+values = 30, 60, 90
+optional = true
+
+[param::scale]
+append = "--scale="
+values = 2
+optional = true
+
+[param::metric]
+append = "--metric="
+values = subpixel, wavelet
+
+[param::search]
+append = "--search="
+values = local, global
+
+[param::distance]
+append = "--distance="
+values = 40, 80, 120
+

@@ -1,0 +1,39 @@
+Combination Execute (cexec)
+
+This tool loads a preset and executes the given application with all possible
+combinations of the given parameters.
+
+It was written for "metapixel" to find out the best possible mosaic image. But
+you can easily extend it for other purposes like finding out the best
+compression parameters.
+
+If you need to know which parameter belongs to which file, just pipe the output
+through "tee": ./cexec ... 2>&1 | tee cexec.log
+
+Syntax:
+    ./cexec <preset> <infile> <outfile>
+
+Example:
+    ./cexec metapixel original_image.png new_image_%.png
+    (The % will be replaced by the current combination number - you can also
+     use it in the infile argument.)
+
+Demo-Output:
+    Executing: metapixel --metapixel original_image.png new_image_1.png -l ~/.metapixel --search=local --distance=40 --metric=subpixel 
+    Executing: metapixel --metapixel original_image.png new_image_2.png -l ~/.metapixel --search=local --distance=40 --metric=subpixel --collage 
+    Executing: metapixel --metapixel original_image.png new_image_3.png -l ~/.metapixel --search=local --distance=40 --scale=2 --metric=subpixel 
+    Executing: metapixel --metapixel original_image.png new_image_4.png -l ~/.metapixel --search=local --distance=40 --scale=2 --metric=subpixel --collage 
+    Executing: metapixel --metapixel original_image.png new_image_5.png -l ~/.metapixel --search=local --distance=40 --metric=wavelet 
+    Executing: metapixel --metapixel original_image.png new_image_6.png -l ~/.metapixel --search=local --distance=40 --metric=wavelet --collage 
+    Executing: metapixel --metapixel original_image.png new_image_7.png -l ~/.metapixel --search=local --distance=40 --scale=2 --metric=wavelet 
+    Executing: metapixel --metapixel original_image.png new_image_8.png -l ~/.metapixel --search=local --distance=40 --scale=2 --metric=wavelet --collage 
+    Executing: metapixel --metapixel original_image.png new_image_9.png -l ~/.metapixel --search=local --cheat=30 --distance=40 --metric=subpixel 
+    ...
+
+    Statistics:
+     - Found combinations: 192
+
+Background:
+    This tool is written in Perl.
+    It uses the library: Config::Abstract::Ini
+

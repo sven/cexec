@@ -1,0 +1,139 @@
+#!/usr/bin/perl
+#
+# Copyright (c) 2009 Sven Bachmann (dev@mcbachmann.de)
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Info: Combination Execute (cexec)
+#
+#	This tool loads a preset and executes the given application
+#       with all possible combinations of the given parameters.
+#
+#       It was written for "metapixel" to find out the best possible
+#       mosaic image. But you can easily extend it for other
+#       purposes like finding out the best compression parameters.
+#
+#       If you need to know which parameter belongs to which file,
+#       just pipe the output through "tee": ./cexec ... | tee cexec.log
+#
+# Syntax: ./cexec <preset> <infile> <outfile>
+#
+# Example: ./cexec metapixel original_image.png new_images_%.png
+#          (The % will be replaced by the current combination
+#           number - you can also use it in the infile argument.)
+#
+
+use strict;
+use warnings;
+use Config::Abstract::Ini;
+use Data::Dumper;
+
+my $comb;
+my $exec = {};
+my $exec_main;
+my $params;
+my @param_list;
+
+sub param_recursive($);
+
+sub main() {
+    my $ini;
+
+    if ($#ARGV < 2) {
+	print("Syntax: ./cexec preset_name input_file output_file\n");
+	print("Hint:   % is a count placeholder and will be incremented on each combination.\n\n");
+	return 0;
+    }
+
+    $ini = new Config::Abstract::Ini("presets/$ARGV[0]");
+    $exec_main = $ini->get_entry("main");
+    $params = $ini->get_entry("param");
+    @param_list = keys(%$params);
+
+    # initial call of recursive parameter list
+    $comb = 0;
+    param_recursive(0);
+
+    # some statistic output
+    print "\nStatistics:\n";
+    print " - Found combinations: $comb\n";
+
+    return 1;
+}
+
+sub param_recursive($) {
+    my $cnt_name = shift;
+    my ($cmd, $cmdline);
+    my $data;
+    my @values;
+    my ($infile, $outfile);
+    my ($pre, $post);
+
+    if ($cnt_name > $#param_list) {
+	$comb++;
+
+	# prepare input and output file masks
+	$infile = $ARGV[1];
+	$outfile = $ARGV[2];
+	$infile =~ s/\%+/$comb/;
+	$outfile =~ s/\%+/$comb/;
+
+	# replace placeholders for in and outfile
+	$pre = $exec_main->{"pre"};
+	$post = $exec_main->{"post"};
+	if (!$pre) { $pre = ""; }		# Config::Abstract::Ini undefs "" entrys in ini files
+	if (!$post) { $post = ""; }
+	$pre =~ s/%infile%/$infile/g;
+	$pre =~ s/%outfile%/$outfile/g;
+	$post =~ s/%infile%/$infile/g;
+	$post =~ s/%outfile%/$outfile/g;
+
+	$cmdline = $exec_main->{"exec"} . ' ' . $pre;
+	foreach $cmd (keys(%$exec)) {
+	    $cmdline .= ' ' . $exec->{$cmd};
+	}
+	$cmdline .= ' ' . $post;
+
+	print "Executing: $cmdline\n";
+	system($cmdline);
+	return 0;
+    }
+
+    $data = $params->{$param_list[$cnt_name]};
+
+    # handle optional parameter
+    if (($data->{'optional'}) && (lc($data->{'optional'} eq 'true'))) {
+	delete($exec->{$param_list[$cnt_name]});
+	param_recursive($cnt_name + 1);
+    }
+
+    # are any values given?
+    if ($data->{'values'}) {
+	@values = split(',', $data->{'values'});
+
+	foreach my $val (@values) {
+	    $val =~ s/^\s+//;
+	    $val =~ s/\s+$//;
+	    $exec->{$param_list[$cnt_name]} = $data->{'append'} . $val;
+	    param_recursive($cnt_name + 1);
+	}
+    } else {
+	$exec->{$param_list[$cnt_name]} = $data->{'append'};
+	param_recursive($cnt_name + 1);
+    }
+}
+
+main();
+
