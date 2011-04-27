@@ -1,4 +1,14 @@
+Author Info
+-----------
+
+Author: Sven Bachmann <dev@mcbachmann.de>
+WWW:    http://www.mcbachmann.de
+Blog:   http://blog.mcbachmann.de
+Host:   https://github.com/sven/cexec
+
+
 Combination Execute (cexec)
+---------------------------
 
 This tool loads a preset and executes the given application with all possible
 combinations of the given parameters.
